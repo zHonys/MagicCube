@@ -1,10 +1,13 @@
 ﻿namespace MagicCube
 {
-    internal class Program
+    class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
-            Console.WriteLine("Hello, World!");
+            using (Game game = new Game())
+            {
+                game.Run(800, 600, 60, @"assets\icon.png");
+            }
         }
     }
 }
