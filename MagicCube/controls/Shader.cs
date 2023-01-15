@@ -78,6 +78,10 @@ namespace MagicCube.controls
         {
             GL.UniformMatrix4(GL.GetUniformLocation(handle, uniformName), transpose, ref data);
         }
+        public void SetUniform(string uniformName, int data)
+        {
+            GL.Uniform1(GL.GetUniformLocation(handle, uniformName), data);
+        }
 
         #region IDisposable
         ~Shader()
