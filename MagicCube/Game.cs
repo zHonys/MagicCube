@@ -8,6 +8,7 @@ using StbImageSharp;
 using MagicCube.controls;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.ComponentModel;
+using MagicCube.shapes;
 
 namespace MagicCube
 {
@@ -16,12 +17,17 @@ namespace MagicCube
         Shader shader;
         Model Cube;
 
+        ThreeByThree test;
+
         Camera camera;
+
+        bool shouldUpdate = true;
 
         public Game() : base(GameWindowSettings.Default, NativeWindowSettings.Default)
         {
             GL.Enable(EnableCap.DepthTest);
 
+            setCursorInputMode(CursorModeValue.CursorDisabled);
             camera = new(KeyboardState, MouseState, 14, MathHelper.DegreesToRadians(60), 10, Size, 0.1f, 100);
         }
         protected override void OnLoad()
@@ -31,18 +37,27 @@ namespace MagicCube
             GL.ClearColor(0.1f, 0.1f, 0.1f, 0.1f);
 
             shader = new(@"shaders\model.vert", @"shaders\model.frag");
-            Cube = new(@"assets\Cube\Cube.obj");
+            //Cube = new(@"assets\Cube\Cube.obj");
+
+            test = new(@"assets\Cube\Cube.obj");
         }
 
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
             base.OnUpdateFrame(args);
 
+            if (!shouldUpdate) return;
+
             float elapsedTime = (float)args.Time;
 
             if (KeyboardState.IsKeyPressed(Keys.Escape)) Close();
+            bool reverse = false;
+            if (KeyboardState.IsKeyDown(Keys.LeftShift)) reverse = true;
 
-            if (IsFocused) camera.Update(elapsedTime);
+            if (KeyboardState.IsKeyPressed(Keys.U)) test.U(reverse);
+            if (KeyboardState.IsKeyPressed(Keys.R)) test.R(reverse);
+
+            camera.Update(elapsedTime);
             matrixUpdate();
         }
         private void matrixUpdate()
@@ -52,6 +67,7 @@ namespace MagicCube
         }
         protected override void OnRenderFrame(FrameEventArgs args)
         {
+            if (!shouldUpdate) return;
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             Matrix4 model = Matrix4.Identity;
@@ -61,10 +77,7 @@ namespace MagicCube
 
             shader.Use();
 
-            shader.SetUniform("Model", ref model);
-
-            Cube.Draw(shader);
-
+            test.Draw(shader);
             //
 
             SwapBuffers();
@@ -90,28 +103,30 @@ namespace MagicCube
         protected override void OnResize(ResizeEventArgs e)
         {
             base.OnResize(e);
-
+            GL.Viewport(0, 0, e.Width, e.Height);
             Size = new Vector2i(e.Width, e.Height);
             camera.ScreenSize = Size;
-            GL.Viewport(0, 0, e.Width, e.Height);
-        }
-        protected override void OnMaximized(MaximizedEventArgs e)
-        {
-            base.OnMaximized(e);
         }
         protected unsafe override void OnClosing(CancelEventArgs e)
         {
-            GLFW.GetMouseButton(WindowPtr, MouseButton.Left);
             base.OnClosing(e);
         }
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
-            if (e.Button == MouseButton.Left) setCursorInputMode(CursorModeValue.CursorDisabled);
+            if (e.Button == MouseButton.Left)
+            {
+                setCursorInputMode(CursorModeValue.CursorDisabled);
+                shouldUpdate = true;
+             }
         }
         protected override void OnFocusedChanged(FocusedChangedEventArgs e)
         {
             base.OnFocusedChanged(e);
-            if (!e.IsFocused) setCursorInputMode(CursorModeValue.CursorDisabled);
+            if (!e.IsFocused)
+            {
+                setCursorInputMode(CursorModeValue.CursorNormal);
+                shouldUpdate = false;
+            }
         }
         private unsafe void setCursorInputMode(CursorModeValue value)
         {

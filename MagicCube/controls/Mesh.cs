@@ -7,6 +7,7 @@ namespace MagicCube.controls
     public class Mesh : IDisposable
     {
         public string Name;
+        public Matrix4 modelMatrix = Matrix4.Identity;
 
         int _VAO, _VBO, _EBO;
 
@@ -27,6 +28,8 @@ namespace MagicCube.controls
         public void Draw(Shader shader)
         {
             GL.BindVertexArray(_VAO);
+
+            shader.SetUniform("Model", ref modelMatrix);
 
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, _textures[0].Handle);

@@ -1,10 +1,5 @@
 ﻿using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MagicCube.controls
 {
@@ -18,7 +13,7 @@ namespace MagicCube.controls
         float _depthFar;
         int _sensitivity;
 
-        float yaw   = MathHelper.Pi;
+        float yaw   = -MathHelper.PiOver2;
         float pitch = 0;//-MathHelper.PiOver2;
 
         //Vectors
@@ -66,7 +61,6 @@ namespace MagicCube.controls
             Move(elapsedTime);
 
             View = Matrix4.LookAt(position, position + cameraZ, worldUp);
-            //Console.WriteLine($"{position}");
         }
 
         private void Move(float elapsed)
@@ -102,10 +96,9 @@ namespace MagicCube.controls
                           MathF.Sin(pitch),
                           MathF.Sin(yaw) * MathF.Cos(pitch));
 
-            //cameraX.Normalize();
+            cameraX.Normalize();
             cameraX = Vector3.Cross(cameraZ, worldUp);
-            //cameraZ.Normalize();
-            Console.WriteLine($"{yaw}    {pitch}");
+            cameraZ.Normalize();
         }
     }
 

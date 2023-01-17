@@ -2,6 +2,7 @@
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using StbImageSharp;
+using static OpenTK.Graphics.OpenGL.GL;
 
 namespace MagicCube.controls
 {
@@ -11,6 +12,7 @@ namespace MagicCube.controls
 
         private readonly string _directory;
         private List<Mesh> _meshes = new();
+        public List<Mesh> Meshes { get { return _meshes; } }
         private List<Texture> _textures = new();
 
         public Model(string modelPath)
@@ -54,7 +56,7 @@ namespace MagicCube.controls
 
         }
         private Mesh ProcessMesh(Assimp.Mesh mesh, Scene scene)
-        {;
+        {
             List<Vertex> vertices = new();
             uint[] indices = mesh.GetUnsignedIndices();
             List<Texture> textures = new();
