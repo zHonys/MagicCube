@@ -5,32 +5,65 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
 
 using StbImageSharp;
+using MagicCube.controls;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using System.ComponentModel;
 
 namespace MagicCube
 {
     public class Game : GameWindow
     {
+        Shader shader;
+        Model Cube;
+
+        Camera camera;
+
         public Game() : base(GameWindowSettings.Default, NativeWindowSettings.Default)
         {
             GL.Enable(EnableCap.DepthTest);
+
+            camera = new(KeyboardState, MouseState, 14, MathHelper.DegreesToRadians(60), 10, Size, 0.1f, 100);
         }
         protected override void OnLoad()
         {
             base.OnLoad();
 
             GL.ClearColor(0.1f, 0.1f, 0.1f, 0.1f);
+
+            shader = new(@"shaders\model.vert", @"shaders\model.frag");
+            Cube = new(@"assets\Cube\Cube.obj");
         }
 
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
             base.OnUpdateFrame(args);
+
+            float elapsedTime = (float)args.Time;
+
+            if (KeyboardState.IsKeyPressed(Keys.Escape)) Close();
+
+            if (IsFocused) camera.Update(elapsedTime);
+            matrixUpdate();
+        }
+        private void matrixUpdate()
+        {
+            shader.SetUniform("View", ref camera.View);
+            shader.SetUniform("Projection", ref camera.Projection);
         }
         protected override void OnRenderFrame(FrameEventArgs args)
         {
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
+            Matrix4 model = Matrix4.Identity;
+            model = Matrix4.CreateTranslation(0, 0, -20);
+
             // code
 
+            shader.Use();
+
+            shader.SetUniform("Model", ref model);
+
+            Cube.Draw(shader);
 
             //
 
@@ -49,7 +82,7 @@ namespace MagicCube
             RenderFrequency = Hertz;
 
             ImageResult image = ImageResult.FromStream(File.OpenRead($@"{Directory.GetCurrentDirectory()}\{relativePath}"));
-            Icon = new WindowIcon(new Image(image.Width, image.Height, image.Data));
+            Icon = new WindowIcon(new OpenTK.Windowing.Common.Input.Image(image.Width, image.Height, image.Data));
 
             Run();
         }
@@ -58,7 +91,31 @@ namespace MagicCube
         {
             base.OnResize(e);
 
+            Size = new Vector2i(e.Width, e.Height);
+            camera.ScreenSize = Size;
             GL.Viewport(0, 0, e.Width, e.Height);
+        }
+        protected override void OnMaximized(MaximizedEventArgs e)
+        {
+            base.OnMaximized(e);
+        }
+        protected unsafe override void OnClosing(CancelEventArgs e)
+        {
+            GLFW.GetMouseButton(WindowPtr, MouseButton.Left);
+            base.OnClosing(e);
+        }
+        protected override void OnMouseDown(MouseButtonEventArgs e)
+        {
+            if (e.Button == MouseButton.Left) setCursorInputMode(CursorModeValue.CursorDisabled);
+        }
+        protected override void OnFocusedChanged(FocusedChangedEventArgs e)
+        {
+            base.OnFocusedChanged(e);
+            if (!e.IsFocused) setCursorInputMode(CursorModeValue.CursorDisabled);
+        }
+        private unsafe void setCursorInputMode(CursorModeValue value)
+        {
+            GLFW.SetInputMode(WindowPtr, CursorStateAttribute.Cursor, value);
         }
     }
 }
