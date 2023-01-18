@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace MagicCube.shapes
 {
-    public class ThreeByThree
+    public class ThreeByThree : IDisposable
     {
         Model model;
         Mesh[,,] sides = new Mesh[3,3,3];
@@ -60,5 +60,61 @@ namespace MagicCube.shapes
                 }
             }
         }
+        public void D(bool reverse = false)
+        {
+            int angle = reverse ? -90 : 90;
+            int rot = reverse ? 0 : 2;
+            Mesh[,,] copy = new Mesh[3, 3, 3];
+            Array.Copy(sides, copy, 27);
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    sides[i, j, 2].modelMatrix *= Matrix4.CreateRotationY(MathHelper.DegreesToRadians(angle));
+                    sides[i, j, 2] = copy[MathHelper.Abs(rot - j), MathHelper.Abs(2 - rot - i), 2];
+                }
+            }
+        }
+        public void L(bool reverse = false)
+        {
+            int angle = reverse ? 90 : -90;
+            int rot = reverse ? 0 : 2;
+            Mesh[,,] copy = new Mesh[3, 3, 3];
+            Array.Copy(sides, copy, 27);
+            for (int j = 0; j < 3; j++)
+            {
+                for (int k = 0; k < 3; k++)
+                {
+                    sides[0, j, k].modelMatrix *= Matrix4.CreateRotationX(MathHelper.DegreesToRadians(angle));
+                    sides[0, j, k] = copy[0, MathHelper.Abs((2 - rot) - k), MathHelper.Abs(rot - j)];
+                }
+            }
+        }
+
+        public void rotate()
+        {
+            model.modelMatrix *= Matrix4.CreateRotationY(MathHelper.DegreesToRadians(90));
+        }
+        #region Dispose
+
+        ~ThreeByThree()
+        {
+            Dispose(false);
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        public void Dispose(bool disposing)
+        {
+            model.Dispose();
+            if (disposing)
+            {
+                Array.Clear(sides);
+            }
+        }
+
+        #endregion
     }
 }

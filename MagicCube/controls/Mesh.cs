@@ -9,15 +9,18 @@ namespace MagicCube.controls
         public string Name;
         public Matrix4 modelMatrix = Matrix4.Identity;
 
+        private Model _modelParent;
         int _VAO, _VBO, _EBO;
 
         List<Vertex> _vertices;
         uint[] _indices;
         List<Texture> _textures;
 
-        public Mesh(string name, List<Vertex> vertices, uint[] indices, List<Texture> textures)
+        public Mesh(string name, Model modelParent, List<Vertex> vertices, uint[] indices, List<Texture> textures)
         {
             Name = name;
+
+            _modelParent = modelParent;
 
             _vertices = vertices;
             _indices  = indices;
@@ -29,7 +32,7 @@ namespace MagicCube.controls
         {
             GL.BindVertexArray(_VAO);
 
-            shader.SetUniform("Model", ref modelMatrix);
+            shader.SetUniform("Model", modelMatrix * _modelParent.modelMatrix);
 
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, _textures[0].Handle);

@@ -14,8 +14,8 @@ namespace MagicCube
 {
     public class Game : GameWindow
     {
+        List<IDisposable> disposables= new List<IDisposable>();
         Shader shader;
-        Model Cube;
 
         ThreeByThree test;
 
@@ -37,9 +37,11 @@ namespace MagicCube
             GL.ClearColor(0.1f, 0.1f, 0.1f, 0.1f);
 
             shader = new(@"shaders\model.vert", @"shaders\model.frag");
+            disposables.Add(shader);
             //Cube = new(@"assets\Cube\Cube.obj");
 
             test = new(@"assets\Cube\Cube.obj");
+            disposables.Add(test);
         }
 
         protected override void OnUpdateFrame(FrameEventArgs args)
@@ -56,14 +58,17 @@ namespace MagicCube
 
             if (KeyboardState.IsKeyPressed(Keys.U)) test.U(reverse);
             if (KeyboardState.IsKeyPressed(Keys.R)) test.R(reverse);
+            if (KeyboardState.IsKeyPressed(Keys.F)) test.D(reverse);
+            if (KeyboardState.IsKeyPressed(Keys.L)) test.L(reverse);
+            if (KeyboardState.IsKeyPressed(Keys.V)) test.rotate();
 
             camera.Update(elapsedTime);
             matrixUpdate();
         }
         private void matrixUpdate()
         {
-            shader.SetUniform("View", ref camera.View);
-            shader.SetUniform("Projection", ref camera.Projection);
+            shader.SetUniform("View", camera.View);
+            shader.SetUniform("Projection", camera.Projection);
         }
         protected override void OnRenderFrame(FrameEventArgs args)
         {
@@ -84,6 +89,7 @@ namespace MagicCube
         }
         protected override void OnUnload()
         {
+            disposables.ForEach(i => i.Dispose());
             base.OnUnload();
         }
         public void Run(int width, int height, float Hertz, string relativePath)

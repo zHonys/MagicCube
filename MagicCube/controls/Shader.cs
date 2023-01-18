@@ -70,11 +70,11 @@ namespace MagicCube.controls
         {
             return GL.GetUniformLocation(handle, uniformName);
         }
-        public static void SetUniform(int location, ref Matrix4 data, bool transpose = false)
+        public static void SetUniform(int location, Matrix4 data, bool transpose = false)
         {
             GL.UniformMatrix4(location, transpose, ref data);
         }
-        public void SetUniform(string uniformName, ref Matrix4 data, bool transpose = false)
+        public void SetUniform(string uniformName, Matrix4 data, bool transpose = false)
         {
             GL.UniformMatrix4(GL.GetUniformLocation(handle, uniformName), transpose, ref data);
         }
