@@ -42,6 +42,10 @@ namespace MagicCube
 
             test = new(@"assets\Cube\Cube.obj");
             disposables.Add(test);
+
+            test.rotate();
+            test.rotate();
+            test.modelMatrix *= Matrix4.CreateTranslation(new(0, -10, -15));
         }
 
         protected override void OnUpdateFrame(FrameEventArgs args)
@@ -58,8 +62,10 @@ namespace MagicCube
 
             if (KeyboardState.IsKeyPressed(Keys.U)) test.U(reverse);
             if (KeyboardState.IsKeyPressed(Keys.R)) test.R(reverse);
-            if (KeyboardState.IsKeyPressed(Keys.F)) test.D(reverse);
+            if (KeyboardState.IsKeyPressed(Keys.C)) test.D(reverse);
             if (KeyboardState.IsKeyPressed(Keys.L)) test.L(reverse);
+            if (KeyboardState.IsKeyPressed(Keys.F)) test.F(reverse);
+            if (KeyboardState.IsKeyPressed(Keys.B)) test.B(reverse);
             if (KeyboardState.IsKeyPressed(Keys.V)) test.rotate();
 
             camera.Update(elapsedTime);

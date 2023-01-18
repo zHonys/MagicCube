@@ -13,6 +13,18 @@ namespace MagicCube.shapes
     {
         Model model;
         Mesh[,,] sides = new Mesh[3,3,3];
+
+        public Matrix4 modelMatrix
+        {
+            get
+            {
+                return model.modelMatrix;
+            }
+            set
+            {
+                model.modelMatrix = value;
+            }
+        }
         public ThreeByThree(string modelPath)
         {
             model = new(modelPath);
@@ -87,6 +99,36 @@ namespace MagicCube.shapes
                 {
                     sides[0, j, k].modelMatrix *= Matrix4.CreateRotationX(MathHelper.DegreesToRadians(angle));
                     sides[0, j, k] = copy[0, MathHelper.Abs((2 - rot) - k), MathHelper.Abs(rot - j)];
+                }
+            }
+        }
+        public void F(bool reverse = false)
+        {
+            int angle = reverse ? -90 : 90;
+            int rot = reverse ? 2 : 0;
+            Mesh[,,] copy = new Mesh[3, 3, 3];
+            Array.Copy(sides, copy, 27);
+            for (int i = 0; i < 3; i++)
+            {
+                for (int k = 0; k < 3; k++)
+                {
+                    sides[i, 2, k].modelMatrix *= Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(angle));
+                    sides[i, 2, k] = copy[MathHelper.Abs((2 - rot) - k), 2, MathHelper.Abs(rot - i)];
+                }
+            }
+        }
+        public void B(bool reverse = false)
+        {
+            int angle = reverse ? 90 : -90;
+            int rot = reverse ? 0 : 2;
+            Mesh[,,] copy = new Mesh[3, 3, 3];
+            Array.Copy(sides, copy, 27);
+            for (int i = 0; i < 3; i++)
+            {
+                for (int k = 0; k < 3; k++)
+                {
+                    sides[i, 0, k].modelMatrix *= Matrix4.CreateRotationZ(MathHelper.DegreesToRadians(angle));
+                    sides[i, 0, k] = copy[MathHelper.Abs((2 - rot) - k), 0, MathHelper.Abs(rot - i)];
                 }
             }
         }
