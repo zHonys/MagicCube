@@ -1,11 +1,5 @@
 ﻿using MagicCube.controls;
-using OpenTK.Graphics.ES30;
 using OpenTK.Mathematics;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MagicCube.shapes
 {
@@ -104,7 +98,7 @@ namespace MagicCube.shapes
         }
         public void F(bool reverse = false)
         {
-            int angle = reverse ? -90 : 90;
+            int angle = reverse ? 90 : -90;
             int rot = reverse ? 2 : 0;
             Mesh[,,] copy = new Mesh[3, 3, 3];
             Array.Copy(sides, copy, 27);
@@ -119,7 +113,7 @@ namespace MagicCube.shapes
         }
         public void B(bool reverse = false)
         {
-            int angle = reverse ? 90 : -90;
+            int angle = reverse ? -90 : 90;
             int rot = reverse ? 0 : 2;
             Mesh[,,] copy = new Mesh[3, 3, 3];
             Array.Copy(sides, copy, 27);
@@ -135,7 +129,7 @@ namespace MagicCube.shapes
 
         public void rotate()
         {
-            model.modelMatrix *= Matrix4.CreateRotationY(MathHelper.DegreesToRadians(90));
+            model.modelMatrix = Matrix4.CreateRotationY(MathHelper.DegreesToRadians(90)) * model.modelMatrix;
         }
         #region Dispose
 
