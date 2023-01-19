@@ -1,9 +1,10 @@
-﻿using OpenTK.Mathematics;
+﻿using MagicCube.Interfaces;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace MagicCube.controls
 {
-    public class Camera
+    public class Camera : IUpdatable
     {
         //1d Vars
         public float Speed;

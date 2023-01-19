@@ -9,15 +9,18 @@ using MagicCube.controls;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.ComponentModel;
 using MagicCube.shapes;
+using MagicCube.Interfaces;
 
 namespace MagicCube
 {
     public class Game : GameWindow
     {
-        List<IDisposable> disposables= new List<IDisposable>();
+        List<IDisposable> disposables = new List<IDisposable>();
+        List<IUpdatable> updatables = new List<IUpdatable>();
+        List<IDrawable> drawables = new List<IDrawable>();
         Shader shader;
 
-        ThreeByThree test;
+        ThreeByThree cube;
 
         Camera camera;
 
@@ -28,7 +31,12 @@ namespace MagicCube
             GL.Enable(EnableCap.DepthTest);
 
             setCursorInputMode(CursorModeValue.CursorDisabled);
+            shader = new(@"shaders\model.vert", @"shaders\model.frag");
+
             camera = new(KeyboardState, MouseState, 14, MathHelper.DegreesToRadians(60), 10, Size, 0.1f, 100);
+            addToLists(camera);
+            cube = new(@"assets\Cube\Cube.obj", KeyboardState, 0.5f, RotationFunctionsType.Sin);
+            addToLists(cube);
         }
         protected override void OnLoad()
         {
@@ -36,18 +44,15 @@ namespace MagicCube
 
             GL.ClearColor(0.1f, 0.1f, 0.1f, 0.1f);
 
-            shader = new(@"shaders\model.vert", @"shaders\model.frag");
-            disposables.Add(shader);
-            //Cube = new(@"assets\Cube\Cube.obj");
-
-            test = new(@"assets\Cube\Cube.obj", 0.5f, RotationFunctionsType.Sin);
-            disposables.Add(test);
-
-            test.Spin();
-            test.Spin();
-            test.modelMatrix *= Matrix4.CreateTranslation(new(0, -10, -15));
+            //cube.Spin(Vector3.UnitY, 180, false);
+            cube.modelMatrix *= Matrix4.CreateTranslation(new(0, -10, -15));
         }
 
+        private void matrixUpdate()
+        {
+            shader.SetUniform("View", camera.View);
+            shader.SetUniform("Projection", camera.Projection);
+        }
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
             base.OnUpdateFrame(args);
@@ -57,25 +62,9 @@ namespace MagicCube
             float elapsedTime = (float)args.Time;
 
             if (KeyboardState.IsKeyPressed(Keys.Escape)) Close();
-            bool reverse = false;
-            if (KeyboardState.IsKeyDown(Keys.LeftShift)) reverse = true;
 
-            if (KeyboardState.IsKeyPressed(Keys.U)) test.U(reverse);
-            if (KeyboardState.IsKeyPressed(Keys.R)) test.R(reverse);
-            if (KeyboardState.IsKeyPressed(Keys.C)) test.D(reverse);
-            if (KeyboardState.IsKeyPressed(Keys.L)) test.L(reverse);
-            if (KeyboardState.IsKeyPressed(Keys.F)) test.F(reverse);
-            if (KeyboardState.IsKeyPressed(Keys.B)) test.B(reverse);
-            if (KeyboardState.IsKeyPressed(Keys.V)) test.Spin();
-
-            camera.Update(elapsedTime);
-            test.Update(elapsedTime);
+            updatables.ForEach(up => up.Update(elapsedTime));
             matrixUpdate();
-        }
-        private void matrixUpdate()
-        {
-            shader.SetUniform("View", camera.View);
-            shader.SetUniform("Projection", camera.Projection);
         }
         protected override void OnRenderFrame(FrameEventArgs args)
         {
@@ -89,15 +78,10 @@ namespace MagicCube
 
             shader.Use();
 
-            test.Draw(shader);
+            drawables.ForEach(obj => obj.Draw(shader));
             //
 
             SwapBuffers();
-        }
-        protected override void OnUnload()
-        {
-            disposables.ForEach(i => i.Dispose());
-            base.OnUnload();
         }
         public void Run(int width, int height, float Hertz, string relativePath)
         {
@@ -120,10 +104,6 @@ namespace MagicCube
             Size = new Vector2i(e.Width, e.Height);
             camera.ScreenSize = Size;
         }
-        protected unsafe override void OnClosing(CancelEventArgs e)
-        {
-            base.OnClosing(e);
-        }
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             if (e.Button == MouseButton.Left)
@@ -144,6 +124,17 @@ namespace MagicCube
         private unsafe void setCursorInputMode(CursorModeValue value)
         {
             GLFW.SetInputMode(WindowPtr, CursorStateAttribute.Cursor, value);
+        }
+        protected override void OnUnload()
+        {
+            disposables.ForEach(i => i.Dispose());
+            base.OnUnload();
+        }
+        private void addToLists(object item)
+        {
+            if (item is IDisposable) disposables.Add((IDisposable)item);
+            if (item is IUpdatable) updatables.Add((IUpdatable)item);
+            if (item is IDrawable) drawables.Add((IDrawable)item);
         }
     }
 }
