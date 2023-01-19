@@ -1,19 +1,16 @@
 ﻿using MagicCube.controls;
 using MagicCube.Interfaces;
 using OpenTK.Mathematics;
-using OpenTK.Platform.Windows;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using System.Collections;
-using System.Runtime.InteropServices;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace MagicCube.shapes
 {
     public class ThreeByThree : IDisposable, IUpdatable, IDrawable
     {
-        Model model;
-        Mesh[,,] sides = new Mesh[3, 3, 3];
-        KeyboardState _keyboardState;
+        private Model model;
+        private Mesh[,,] sides = new Mesh[3, 3, 3];
+
+        private KeyboardState _keyboardState;
         private float _rotationTime;
 
         public Matrix4 modelMatrix
@@ -35,7 +32,7 @@ namespace MagicCube.shapes
         }
         public void Update(float elapsed)
         {
-            ProcessInput(elapsed);
+            ProcessInput();
             runAnimations(elapsed);
         }
         public void Draw(Shader shader)
@@ -45,30 +42,30 @@ namespace MagicCube.shapes
 
         #region Input manager
 
-        private void ProcessInput(float elapsed)
+        private void ProcessInput()
         {
             bool reverse = false;
             if (_keyboardState.IsKeyDown(Keys.LeftShift)) reverse = true;
 
-            if (_keyboardState.IsKeyPressed(Keys.R)) R(reverse);
-            if (_keyboardState.IsKeyPressed(Keys.L)) L(reverse);
+            if (_keyboardState.IsKeyPressed(Keys.R)) TurnAxisX(0, reverse);
+            if (_keyboardState.IsKeyPressed(Keys.L)) TurnAxisX(2, !reverse);
 
-            if (_keyboardState.IsKeyPressed(Keys.U)) U(reverse);
-            if (_keyboardState.IsKeyPressed(Keys.C)) D(reverse);
+            if (_keyboardState.IsKeyPressed(Keys.U)) TurnAxisY(0,  reverse);
+            if (_keyboardState.IsKeyPressed(Keys.C)) TurnAxisY(2, !reverse);
 
-            if (_keyboardState.IsKeyPressed(Keys.F)) F(reverse);
-            if (_keyboardState.IsKeyPressed(Keys.B)) B(reverse);
+            if (_keyboardState.IsKeyPressed(Keys.F)) TurnAxisZ(0, reverse);
+            if (_keyboardState.IsKeyPressed(Keys.B)) TurnAxisZ(2, !reverse);
 
-            if (_keyboardState.IsKeyPressed(Keys.X)) Spin(Vector3.UnitX, 90, reverse);
-            if (_keyboardState.IsKeyPressed(Keys.Z)) Spin(Vector3.UnitZ, 90, reverse);
-            if (_keyboardState.IsKeyPressed(Keys.Y)) Spin(Vector3.UnitY, 90, reverse);
+            if (_keyboardState.IsKeyPressed(Keys.X)) Spin(Vector3.UnitX, reverse);
+            if (_keyboardState.IsKeyPressed(Keys.Z)) Spin(Vector3.UnitZ, reverse);
+            if (_keyboardState.IsKeyPressed(Keys.Y)) Spin(Vector3.UnitY, reverse);
         }
 
         #endregion
 
         #region Movements
 
-        public void U(bool reverse = false)
+        public void TurnAxisY(int layer, bool reverse = false)
         {
             int angle = reverse ? 90 : -90;
             int rot = reverse ? 2 : 0;
@@ -78,42 +75,12 @@ namespace MagicCube.shapes
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    querryAnimation(sides[i, j, 0], Vector3.UnitY, angle);
-                    sides[i, j, 0] = copy[MathHelper.Abs(rot - j), MathHelper.Abs(2 - rot - i), 0];
+                    querryAnimation(sides[i, j, layer], Vector3.UnitY, angle);
+                    sides[i, j, layer] = copy[MathHelper.Abs(rot - j), MathHelper.Abs(2 - rot - i), layer];
                 }
             }
         }
-        public void D(bool reverse = false)
-        {
-            int angle = reverse ? -90 : 90;
-            int rot = reverse ? 0 : 2;
-            Mesh[,,] copy = new Mesh[3, 3, 3];
-            Array.Copy(sides, copy, 27);
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 3; j++)
-                {
-                    querryAnimation(sides[i, j, 2], Vector3.UnitY, angle);
-                    sides[i, j, 2] = copy[MathHelper.Abs(rot - j), MathHelper.Abs(2 - rot - i), 2];
-                }
-            }
-        }
-        public void L(bool reverse = false)
-        {
-            int angle = reverse ? -90 : 90;
-            int rot = reverse ? 2 : 0;
-            Mesh[,,] copy = new Mesh[3, 3, 3];
-            Array.Copy(sides, copy, 27);
-            for (int j = 0; j < 3; j++)
-            {
-                for (int k = 0; k < 3; k++)
-                {
-                    querryAnimation(sides[2, j, k], Vector3.UnitX, angle);
-                    sides[2, j , k] = copy[2, MathHelper.Abs((2 - rot) - k), MathHelper.Abs(rot - j)];
-                }
-            }
-        }
-        public void R(bool reverse = false)
+        public void TurnAxisX(int column, bool reverse = false)
         {
             int angle = reverse ? 90 : -90;
             int rot = reverse ? 0 : 2;
@@ -123,12 +90,12 @@ namespace MagicCube.shapes
             {
                 for (int k = 0; k < 3; k++)
                 {
-                    querryAnimation(sides[0, j, k], Vector3.UnitX, angle);
-                    sides[0, j, k] = copy[0, MathHelper.Abs((2 - rot) - k), MathHelper.Abs(rot - j)];
+                    querryAnimation(sides[column, j, k], Vector3.UnitX, angle);
+                    sides[column, j, k] = copy[column, MathHelper.Abs((2 - rot) - k), MathHelper.Abs(rot - j)];
                 }
             }
         }
-        public void F(bool reverse = false)
+        public void TurnAxisZ(int row, bool reverse = false)
         {
             int angle = reverse ? 90 : -90;
             int rot = reverse ? 2 : 0;
@@ -138,34 +105,21 @@ namespace MagicCube.shapes
             {
                 for (int k = 0; k < 3; k++)
                 {
-                    querryAnimation(sides[i, 0, k], Vector3.UnitZ, angle);
-                    sides[i, 0, k] = copy[MathHelper.Abs((2 - rot) - k), 0, MathHelper.Abs(rot - i)];
+                    querryAnimation(sides[i, row, k], Vector3.UnitZ, angle);
+                    sides[i, row, k] = copy[MathHelper.Abs((2 - rot) - k), row, MathHelper.Abs(rot - i)];
                 }
             }
         }
-        public void B(bool reverse = false)
+        public void Spin(Vector3 axis, bool reverse)
         {
-            int angle = reverse ? -90 : 90;
-            int rot = reverse ? 0 : 2;
-            Mesh[,,] copy = new Mesh[3, 3, 3];
-            Array.Copy(sides, copy, 27);
+            Action<int, bool> turn = (foo, bar) => { };
+            if (axis == Vector3.UnitX) turn = TurnAxisX;
+            if (axis == Vector3.UnitY) turn = TurnAxisY;
+            if (axis == Vector3.UnitZ) turn = TurnAxisZ;
             for (int i = 0; i < 3; i++)
             {
-                for (int k = 0; k < 3; k++)
-                {
-                    querryAnimation(sides[i, 2, k], Vector3.UnitZ, angle);
-                    sides[i, 2, k] = copy[MathHelper.Abs((2 - rot) - k), 2, MathHelper.Abs(rot - i)];
-                }
+                turn(i, reverse);
             }
-        }
-
-        public void Spin(Vector3 axis, float angle, bool reverse)
-        {
-            angle = reverse ? -angle : angle;
-            model.Meshes.ForEach(mesh =>
-            {
-                querryAnimation(mesh, axis, angle);
-            });
         }
 
         #endregion
