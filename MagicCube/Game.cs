@@ -40,7 +40,7 @@ namespace MagicCube
             disposables.Add(shader);
             //Cube = new(@"assets\Cube\Cube.obj");
 
-            test = new(@"assets\Cube\Cube.obj");
+            test = new(@"assets\Cube\Cube.obj", 0.5f, RotationFunctionsType.Sin);
             disposables.Add(test);
 
             test.Spin();
