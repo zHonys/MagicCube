@@ -51,7 +51,7 @@ namespace MagicCube.shapes
             if (_keyboardState.IsKeyPressed(Keys.L)) TurnAxisX(2, !reverse);
 
             if (_keyboardState.IsKeyPressed(Keys.U)) TurnAxisY(0,  reverse);
-            if (_keyboardState.IsKeyPressed(Keys.C)) TurnAxisY(2, !reverse);
+            if (_keyboardState.IsKeyPressed(Keys.D)) TurnAxisY(2, !reverse);
 
             if (_keyboardState.IsKeyPressed(Keys.F)) TurnAxisZ(0, reverse);
             if (_keyboardState.IsKeyPressed(Keys.B)) TurnAxisZ(2, !reverse);
