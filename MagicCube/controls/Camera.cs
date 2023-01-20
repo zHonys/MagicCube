@@ -14,15 +14,13 @@ namespace MagicCube.controls
         float _depthFar;
         int _sensitivity;
 
-        float yaw   = -MathHelper.PiOver2;
-        float pitch = 0;//-MathHelper.PiOver2;
+        float radius = 20;
+        float yaw = 0;
+        float pitch = 0;
 
         //Vectors
-        Vector3 position;
-
-        Vector3 cameraX;
+        Vector3 position = new();
         readonly Vector3 worldUp = new(0, 1, 0);
-        Vector3 cameraZ;
 
         Vector2 _screenSize;
         public Vector2 ScreenSize
@@ -40,12 +38,10 @@ namespace MagicCube.controls
         public Matrix4 Projection;
 
         // Input
-        readonly KeyboardState _keyboardState;
         readonly MouseState _mouse;
 
-        public Camera(KeyboardState keyboardState, MouseState mouse, float speed, float fov, int sensitivity, Vector2 screenSize, float depthNear, float depthFar)
+        public Camera(MouseState mouse, float speed, float fov, int sensitivity, Vector2 screenSize, float depthNear, float depthFar)
         {
-            _keyboardState = keyboardState;
             _mouse = mouse;
 
             Speed = speed;
@@ -57,50 +53,30 @@ namespace MagicCube.controls
         }
 
         public void Update(float elapsedTime)
-        {
-            Look(elapsedTime);
+        {;
             Move(elapsedTime);
 
-            View = Matrix4.LookAt(position, position + cameraZ, worldUp);
+            View = Matrix4.LookAt(position * radius, Vector3.Zero, worldUp);
         }
 
         private void Move(float elapsed)
         {
-            if (!_keyboardState.IsAnyKeyDown) return;
-
-            Vector2 movement = Vector2.Zero;
-            if (_keyboardState.IsKeyDown(Keys.W)) movement += new Vector2(0, 1);
-            if (_keyboardState.IsKeyDown(Keys.S)) movement += new Vector2(0, -1);
-            if (_keyboardState.IsKeyDown(Keys.A)) movement += new Vector2(-1, 0);
-            if (_keyboardState.IsKeyDown(Keys.D)) movement += new Vector2(1, 0);
-            if (movement == Vector2.Zero) return;
-            movement.Normalize();
-            //Console.WriteLine(movement);
-            movement *= elapsed * Speed;
-            position += (cameraX * movement.X) + (cameraZ * movement.Y);
-        }
-        private void Look(float elapsed)
-        {
             Vector2 offSet = _mouse.Delta;
 
-            offSet *= (MathHelper.Pi/180) * (_sensitivity/100f);
+            offSet *= (MathHelper.Pi / 180) * (_sensitivity / 100f);
 
             yaw += offSet.X;
             pitch -= offSet.Y;
 
             float maxPitch = MathHelper.DegreesToRadians(89);
 
-            if (pitch >  maxPitch) pitch =  maxPitch;
+            if (pitch > maxPitch) pitch = maxPitch;
             if (pitch < -maxPitch) pitch = -maxPitch;
 
-            cameraZ = new(MathF.Cos(yaw) * MathF.Cos(pitch),
-                          MathF.Sin(pitch),
-                          MathF.Sin(yaw) * MathF.Cos(pitch));
-
-            cameraX.Normalize();
-            cameraX = Vector3.Cross(cameraZ, worldUp);
-            cameraZ.Normalize();
+            position.X = MathF.Sin(yaw);
+            position.Y = MathF.Sin(pitch);
+            position.Z = MathF.Cos(yaw);
+            position.Normalize();
         }
     }
-
 }

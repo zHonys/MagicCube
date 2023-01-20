@@ -33,7 +33,7 @@ namespace MagicCube
             setCursorInputMode(CursorModeValue.CursorDisabled);
             shader = new(@"shaders\model.vert", @"shaders\model.frag");
 
-            camera = new(KeyboardState, MouseState, 14, MathHelper.DegreesToRadians(60), 10, Size, 0.1f, 100);
+            camera = new(MouseState, 14, MathHelper.DegreesToRadians(60), 10, Size, 0.1f, 100);
             addToLists(camera);
             cube = new(@"assets\Cube\Cube.obj", KeyboardState, 0.5f, RotationFunctionsType.Sin);
             addToLists(cube);
@@ -43,9 +43,6 @@ namespace MagicCube
             base.OnLoad();
 
             GL.ClearColor(0.1f, 0.1f, 0.1f, 0.1f);
-
-            //cube.Spin(Vector3.UnitY, 180, false);
-            cube.modelMatrix *= Matrix4.CreateTranslation(new(0, -10, -15));
         }
 
         private void matrixUpdate()
@@ -72,7 +69,6 @@ namespace MagicCube
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             Matrix4 model = Matrix4.Identity;
-            model = Matrix4.CreateTranslation(0, 0, -20);
 
             // code
 
