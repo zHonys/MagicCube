@@ -10,6 +10,13 @@ namespace MagicCube.Controls
         private Matrix4X4<float> _view;
         public Matrix4X4<float> Projection { get => _projection; }
         private Matrix4X4<float> _projection;
+        public enum MovementMode
+        {
+            Locked,
+            Free
+        }
+        public MovementMode MoveMode = MovementMode.Free;
+        public Vector3D<float> LookingPoint = Vector3D<float>.Zero;
 
         Vector3D<float> _position =  Vector3D<float>.Zero;
         Vector3D<float> _Target   = -Vector3D<float>.UnitZ;
@@ -67,7 +74,6 @@ namespace MagicCube.Controls
             _pitch += -deltaPos.Y;
 
             if (Scalar.Abs(_pitch) >= Scalar.DegreesToRadians(85f)) _pitch = Scalar.DegreesToRadians(85f) * Scalar.Sign(_pitch);
-
             if (Scalar.Abs(_yaw - Scalar<float>.Pi) > Scalar<float>.Pi) _yaw += Scalar<float>.Tau * -Scalar.Sign(_yaw);
 
             _Target = new Vector3D<float>(
@@ -78,8 +84,6 @@ namespace MagicCube.Controls
             _Target = Vector3D.Normalize(_Target);
 
             _cameraX = Vector3D.Cross(_Target, _worldUp);
-
-            Console.WriteLine($"Radians: {_yaw}  -   Degrees: {Scalar.RadiansToDegrees(_yaw)}");
 
             lastPos = currentPos;
             UpdateView();
@@ -94,12 +98,21 @@ namespace MagicCube.Controls
             if (keys.Contains(Key.S)) positionOffSet += -_Target;
 
             if (positionOffSet == Vector3D<float>.Zero) return;
-            //Console.WriteLine(positionOffSet);
+
             _position += Vector3D.Normalize(positionOffSet) * _speed * elapsedSeconds;
             UpdateView();
         }
         private void UpdateView()
         {
+            if (MoveMode == MovementMode.Locked)
+            {
+                _view =
+                Matrix4X4.CreateLookAt(
+                cameraPosition: _Target,
+                cameraTarget: LookingPoint,
+                cameraUpVector: _worldUp);
+                return;
+            }
             _view =
             Matrix4X4.CreateLookAt(
                 cameraPosition: _position,
