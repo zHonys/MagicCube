@@ -1,82 +1,142 @@
-﻿using MagicCube.Interfaces;
-using OpenTK.Mathematics;
-using OpenTK.Windowing.GraphicsLibraryFramework;
+﻿using Silk.NET.Input;
+using Silk.NET.Input.Extensions;
+using Silk.NET.Maths;
 
-namespace MagicCube.controls
+namespace MagicCube.Controls
 {
-    public class Camera : IUpdatable
+    public class Camera
     {
-        //1d Vars
-        public float Speed;
+        public Matrix4X4<float> View { get => _view; }
+        private Matrix4X4<float> _view;
+        public Matrix4X4<float> Projection { get => _projection; }
+        private Matrix4X4<float> _projection;
 
-        float _fov;
-        float _depthNear;
-        float _depthFar;
-        int _sensitivity;
+        Vector3D<float> _position =  Vector3D<float>.Zero;
+        Vector3D<float> _Target   = -Vector3D<float>.UnitZ;
+        Vector3D<float> _worldUp  =  Vector3D<float>.UnitY;
+        Vector3D<float> _cameraX  =  Vector3D<float>.UnitX;
 
-        float radius = 20;
-        float yaw = 0;
-        float pitch = 0;
+        readonly float _speed = 1;
 
-        //Vectors
-        Vector3 position = new();
-        readonly Vector3 worldUp = new(0, 1, 0);
+        Vector2D<float> _windowSize;
+        float _FOV;
+        readonly float _nearPlane;
+        readonly float _farPlane;
 
-        Vector2 _screenSize;
-        public Vector2 ScreenSize
+        readonly IInputContext _input;
+        readonly float _sensibility = 1;
+
+        float _pitch = 0;
+        float _yaw   = 0;
+
+        public Camera(IInputContext input, Vector2D<int> windowSize, float speed, float FOV, float nearPlane, float farPlane)
         {
-            get { return _screenSize; }
-            set
-            {
-                _screenSize = value;
-                Matrix4.CreatePerspectiveFieldOfView(_fov, _screenSize.X / _screenSize.Y, _depthNear, _depthFar, out Projection);
-            }
+            _input = input;
+
+            _speed = speed;
+
+            _windowSize = (Vector2D<float>)windowSize;
+            _FOV = FOV;
+            _nearPlane = nearPlane;
+            _farPlane = farPlane;
+
+            UpdateView();
+            UpdateProjection();
         }
-
-        //Matrix
-        public Matrix4 View;
-        public Matrix4 Projection;
-
-        // Input
-        readonly MouseState _mouse;
-
-        public Camera(MouseState mouse, float speed, float fov, int sensitivity, Vector2 screenSize, float depthNear, float depthFar)
+        public void Update(double elapsedSeconds)
         {
-            _mouse = mouse;
-
-            Speed = speed;
-            _fov = fov;
-            _sensitivity = sensitivity;
-            _depthNear = depthNear;
-            _depthFar = depthFar;
-            ScreenSize = screenSize;
+            Inputhandler((float)elapsedSeconds);
+            ScrollInput(_input.Mice[0].ScrollWheels[0]);
         }
-
-        public void Update(float elapsedTime)
-        {;
-            Move(elapsedTime);
-
-            View = Matrix4.LookAt(position * radius, Vector3.Zero, worldUp);
-        }
-
-        private void Move(float elapsed)
+        #region View
+        private void Inputhandler(float elapsedSeconds)
         {
-            Vector2 offSet = _mouse.Delta;
-
-            offSet *= (MathHelper.Pi / 180) * (_sensitivity / 100f);
-
-            yaw += offSet.X;
-            pitch -= offSet.Y;
-
-            float maxPitch = MathHelper.DegreesToRadians(89);
-
-            if (pitch > maxPitch) pitch = maxPitch;
-            if (pitch < -maxPitch) pitch = -maxPitch;
-
-            position.X = MathF.Sin(yaw);
-            position.Y = MathF.Sin(pitch);
-            position.Z = MathF.Cos(yaw);
-            position.Normalize();
+            MouseHandler(elapsedSeconds, _input.Mice[0]);
+            MovementHandler(elapsedSeconds, _input.Keyboards[0].CaptureState().GetPressedKeys().ToArray());
         }
+        private Vector2D<float> lastPos = Vector2D<float>.Zero;
+        private void MouseHandler(float elapsedSeconds, IMouse mouse)
+        {
+            if (mouse.Cursor.CursorMode != CursorMode.Disabled) return;
+            Vector2D<float> currentPos = mouse.Position.ToGeneric();
+            if (currentPos == lastPos) return;
+            float changeRate = _sensibility * elapsedSeconds * Scalar<float>.RadiansPerDegree;
+            Vector2D<float> deltaPos = (currentPos - lastPos) * changeRate;
+
+            _yaw += deltaPos.X;
+            _pitch += -deltaPos.Y;
+
+            if (Scalar.Abs(_pitch) >= Scalar.DegreesToRadians(85f)) _pitch = Scalar.DegreesToRadians(85f) * Scalar.Sign(_pitch);
+
+            if (Scalar.Abs(_yaw - Scalar<float>.Pi) > Scalar<float>.Pi) _yaw += Scalar<float>.Tau * -Scalar.Sign(_yaw);
+
+            _Target = new Vector3D<float>(
+                x: Scalar.Cos(_yaw) * Scalar.Cos(_pitch),
+                y: Scalar.Sin(_pitch),
+                z: Scalar.Sin(_yaw) * Scalar.Cos(_pitch));
+
+            _Target = Vector3D.Normalize(_Target);
+
+            _cameraX = Vector3D.Cross(_Target, _worldUp);
+
+            Console.WriteLine($"Radians: {_yaw}  -   Degrees: {Scalar.RadiansToDegrees(_yaw)}");
+
+            lastPos = currentPos;
+            UpdateView();
+        }
+        private void MovementHandler(float elapsedSeconds, Key[] keys)
+        {
+            Vector3D<float> positionOffSet = Vector3D<float>.Zero;
+
+            if (keys.Contains(Key.A)) positionOffSet += -_cameraX;
+            if (keys.Contains(Key.D)) positionOffSet += _cameraX;
+            if (keys.Contains(Key.W)) positionOffSet += _Target;
+            if (keys.Contains(Key.S)) positionOffSet += -_Target;
+
+            if (positionOffSet == Vector3D<float>.Zero) return;
+            //Console.WriteLine(positionOffSet);
+            _position += Vector3D.Normalize(positionOffSet) * _speed * elapsedSeconds;
+            UpdateView();
+        }
+        private void UpdateView()
+        {
+            _view =
+            Matrix4X4.CreateLookAt(
+                cameraPosition: _position,
+                cameraTarget: _Target + _position,
+                cameraUpVector: _worldUp);
+        }
+        #endregion
+        #region Projection
+        public void UpdateSize(Vector2D<int> windowSize)
+        {
+            _windowSize = (Vector2D<float>)windowSize;
+            UpdateProjection();
+        }
+        private void ScrollInput(ScrollWheel scroll)
+        {
+            if (scroll.Y == 0) return;
+            float radians = Scalar<float>.RadiansPerDegree;
+            float offSet = radians * scroll.Y;
+
+            _FOV -= offSet;
+
+            if (_FOV >= radians * 90) _FOV = radians * 90;
+            if (_FOV <= radians * 30) _FOV = radians * 30;
+
+            UpdateProjection();
+        }
+        public event EventHandler<Matrix4X4<float>>? ProjectionChanged;
+        private void UpdateProjection()
+        {
+            _projection =
+            Matrix4X4.CreatePerspectiveFieldOfView(
+                fieldOfView: _FOV,
+                aspectRatio: _windowSize.X / _windowSize.Y,
+                nearPlaneDistance: _nearPlane,
+                farPlaneDistance: _farPlane);
+            ProjectionChanged?.Invoke(this, _projection);
+        }
+        #endregion
     }
 }
