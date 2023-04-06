@@ -2,11 +2,11 @@
 {
     class Program
     {
-        public static void Main(string[] args)
+        public static void Main()
         {
-            using (Game game = new Game())
+            using (Game game = new Game("Magic Cube", @"assets\icon.png", 800, 800, 60))
             {
-                game.Run(800, 600, 60, @"assets\icon.png");
+                game.Run();
             }
         }
     }

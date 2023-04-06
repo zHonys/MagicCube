@@ -1,19 +1,106 @@
-﻿using OpenTK.Mathematics;
-using OpenTK.Windowing.Common.Input;
-using OpenTK.Windowing.Desktop;
-using OpenTK.Graphics.OpenGL4;
-using OpenTK.Windowing.Common;
-
+﻿using Silk.NET.Core;
+using Silk.NET.Input;
+using Silk.NET.Maths;
+using Silk.NET.OpenGL;
+using Silk.NET.Windowing;
+using MagicCube.Controls;
 using StbImageSharp;
-using MagicCube.controls;
-using OpenTK.Windowing.GraphicsLibraryFramework;
-using System.ComponentModel;
-using MagicCube.shapes;
-using MagicCube.Interfaces;
 
 namespace MagicCube
 {
-    public class Game : GameWindow
+    #pragma warning disable CS8618
+    public class Game : IDisposable
+    {
+        GL _GL;
+        readonly IWindow _window;
+        IInputContext _input;
+
+        Camera _camera;
+        public Game(string title, string iconPath, int width, int heigth, int fps)
+        {
+            WindowOptions opts = WindowOptions.Default;
+            opts.Title = title;
+            opts.Size = new(width, heigth);
+            opts.UpdatesPerSecond = fps;
+            opts.FramesPerSecond  = fps;
+            opts.ShouldSwapAutomatically = false;
+
+            _window = Window.Create(opts);
+            setIcon(iconPath);
+
+            _window.Load   += onLoad;
+            _window.Update += onUpdate;
+            _window.Render += onRender;
+            _window.Resize += onResize;
+        }
+        private void onLoad()
+        {
+            _GL    = _window.CreateOpenGL();
+            _input = _window.CreateInput();
+
+            _camera = new(_input, _window.Size, 8, Scalar.DegreesToRadians(45f), 0.01f, 100f);
+        }
+        private void onUpdate(double elapsedTime)
+        {
+            _camera.Update(elapsedTime);
+        }
+        private void onRender(double elapsedTime)
+        {
+            _GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+            // Code Area
+
+
+
+            // End Area
+
+            _window.SwapBuffers();
+        }
+        #region Util
+        private void onResize(Vector2D<int> newSIze)
+        {
+            _GL.Viewport(newSIze);
+        }
+        public void Run()
+        {
+            _window.Run();
+        }
+        private void setIcon(string relativeFilePath)
+        {
+            string path = Path.Join(Directory.GetCurrentDirectory(), relativeFilePath);
+            using(Stream stream = File.OpenRead(path))
+            {
+                ImageResult image = ImageResult.FromStream(stream, ColorComponents.RedGreenBlueAlpha);
+                var rawImage = new RawImage(image.Width, image.Height, image.Data);
+                _window.SetWindowIcon(ref rawImage);
+            }
+        }
+        #endregion
+        #region Dispose
+        readonly private List<IDisposable> disposables = new();
+        private bool disposed = false;
+        ~Game()
+        {
+            Dispose(false);
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        private void Dispose(bool disposing)
+        {
+            if (disposed) return;
+            if (disposing)
+            {
+                disposables.ForEach(item => item.Dispose());
+            }
+
+            disposed = true;
+        }
+        #endregion
+    }
+    /*public class Game : GameWindow
     {
         List<IDisposable> disposables = new List<IDisposable>();
         List<IUpdatable> updatables = new List<IUpdatable>();
@@ -23,6 +110,7 @@ namespace MagicCube
         ThreeByThree cube;
 
         Camera camera;
+
 
         bool shouldUpdate = true;
 
@@ -49,6 +137,8 @@ namespace MagicCube
         {
             shader.SetUniform("View", camera.View);
             shader.SetUniform("Projection", camera.Projection);
+
+            Matrix4 projection = Matrix4.CreateOrthographic(Size.X, Size.Y, 0.1f, 20);
         }
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
@@ -73,12 +163,12 @@ namespace MagicCube
             // code
 
             shader.Use();
-
             drawables.ForEach(obj => obj.Draw(shader));
             //
 
             SwapBuffers();
         }
+
         public void Run(int width, int height, float Hertz, string relativePath)
         {
             Size = new Vector2i(width, height);
@@ -92,7 +182,6 @@ namespace MagicCube
 
             Run();
         }
-
         protected override void OnResize(ResizeEventArgs e)
         {
             base.OnResize(e);
@@ -132,5 +221,5 @@ namespace MagicCube
             if (item is IUpdatable) updatables.Add((IUpdatable)item);
             if (item is IDrawable) drawables.Add((IDrawable)item);
         }
-    }
+    }*/
 }
